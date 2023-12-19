@@ -1,0 +1,33 @@
+﻿@if (Product != null)
+{
+    <div>
+        <h4 class="text-primary">Product @Product.Id</h4>
+        <input type="checkbox" @onchange="FavoriteUpdated" class="form-check-input" /> Add to Favorite
+        <p>@Product.Name</p>
+        <p>@Product.Price</p>
+        <p>Show Properties <input @bind-value="Product.IsActive" class="form-check-input" type="checkbox" checked="@(Product.IsActive ? "checked" : null)" /></p>
+        @if (Product.IsActive)
+        {
+            @foreach (var props in Product.ProductProperties!)
+            {
+                <p>
+                    @props.Key - @props.Value
+                </p>
+            }
+        }
+        <_ButtonComponent ShowButtons="Product.IsActive" />
+    </div>
+}
+
+@code {
+    [Parameter]
+    public Demo_Product? Product { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> OnFavoriteUpdated { get; set; }
+
+    private async Task FavoriteUpdated(ChangeEventArgs e)
+    {
+        await OnFavoriteUpdated.InvokeAsync((bool)e.Value!);
+    }
+}

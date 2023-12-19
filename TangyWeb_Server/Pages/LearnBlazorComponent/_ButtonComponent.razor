@@ -1,0 +1,10 @@
+﻿@if (ShowButtons)
+{
+    <input type="button" value="Delete" style="width:100px" class="btn btn-danger" />
+    <input type="button" value="Edit" style="width:100px" class="btn btn-warning" />
+}
+
+@code {
+    [Parameter]
+    public bool ShowButtons { get; set; }
+}
