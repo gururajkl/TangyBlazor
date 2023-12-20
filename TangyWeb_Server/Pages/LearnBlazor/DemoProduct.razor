@@ -2,11 +2,16 @@
 
 <h3 class="text-success">Demo Product</h3>
 <p>Favorite Products: @SelectedFavoriteProducts</p>
+<p>Product Selected: @ProductChosen</p>
 <div class="row">
     @foreach (var product in Products)
     {
         <div class="col-6 border p-4">
-            <_ProductComponent Product="product" OnFavoriteUpdated="OnFavoriteChanges" />
+            <_ProductComponent Product="product" OnFavoriteUpdated="OnFavoriteChanges" OnProductClicked="ChangeTheChosenProduct">
+                <Content>
+                    RF from parent #1 #2
+                </Content>
+            </_ProductComponent>
         </div>
     }
 </div>
@@ -14,6 +19,7 @@
 @code {
     List<Demo_Product> Products = new();
     private int SelectedFavoriteProducts { get; set; } = 0;
+    private string ProductChosen { get; set; } = "Click on the product";
 
     protected override void OnInitialized()
     {
@@ -56,5 +62,10 @@
         {
             if (SelectedFavoriteProducts >= 0) SelectedFavoriteProducts--;
         }
+    }
+
+    protected void ChangeTheChosenProduct(string productName)
+    {
+        ProductChosen = productName;
     }
 }

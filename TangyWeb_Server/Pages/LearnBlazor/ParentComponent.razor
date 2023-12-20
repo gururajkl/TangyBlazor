@@ -1,0 +1,21 @@
+﻿@page "/parentcomponent"
+
+<h3>ParentComponent</h3>
+
+<_ChildComponent Title="This title is passed from the parent component" OnButtonClick="ShowMessage">
+    <ChildContent>Passing to the render fragment of the child.</ChildContent>
+    <DangerChildContent>Passing to the danger child content.</DangerChildContent>
+</_ChildComponent>
+
+<br />
+
+<p>@message</p>
+
+@code {
+    private string message = "";
+
+    public void ShowMessage()
+    {
+        message = "Button has been clicked from the child component";
+    }
+}

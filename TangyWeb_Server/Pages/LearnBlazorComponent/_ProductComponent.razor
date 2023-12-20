@@ -1,9 +1,15 @@
 ﻿@if (Product != null)
 {
-    <div>
+    <div @onclick="ProductClicked">
         <h4 class="text-primary">Product @Product.Id</h4>
         <input type="checkbox" @onchange="FavoriteUpdated" class="form-check-input" /> Add to Favorite
         <p>@Product.Name</p>
+
+        @if (Content != null)
+        {
+            <p>@Content</p>
+        }
+
         <p>@Product.Price</p>
         <p>Show Properties <input @bind-value="Product.IsActive" class="form-check-input" type="checkbox" checked="@(Product.IsActive ? "checked" : null)" /></p>
         @if (Product.IsActive)
@@ -26,8 +32,19 @@
     [Parameter]
     public EventCallback<bool> OnFavoriteUpdated { get; set; }
 
+    [Parameter]
+    public EventCallback<string> OnProductClicked { get; set; }
+
+    [Parameter]
+    public RenderFragment? Content { get; set; }
+
     private async Task FavoriteUpdated(ChangeEventArgs e)
     {
         await OnFavoriteUpdated.InvokeAsync((bool)e.Value!);
+    }
+
+    private async Task ProductClicked(MouseEventArgs e)
+    {
+        await OnProductClicked.InvokeAsync(Product!.Name);
     }
 }
