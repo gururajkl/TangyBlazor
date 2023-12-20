@@ -2,20 +2,30 @@
 
 <h3>ParentComponent</h3>
 
-<_ChildComponent Title="This title is passed from the parent component" OnButtonClick="ShowMessage">
-    <ChildContent>Passing to the render fragment of the child.</ChildContent>
-    <DangerChildContent>Passing to the danger child content.</DangerChildContent>
-</_ChildComponent>
-
-<br />
+<CascadingValue Value="CascadingMessage">
+    <_ChildComponent Title="This title is passed from the parent component" OnButtonClick="ShowMessage">
+        <ChildContent>Passing to the render fragment of the child.</ChildContent>
+        <DangerChildContent>Passing to the danger child content.</DangerChildContent>
+    </_ChildComponent>
+</CascadingValue>
 
 <p>@message</p>
 
+<_AnotherChildComponent placeholder="Placeholder from parent" />
+
 @code {
     private string message = "";
+    string CascadingMessage = "This is the message from the GrandParent Component";
 
     public void ShowMessage()
     {
         message = "Button has been clicked from the child component";
     }
+
+    public Dictionary<string, object> InputAttributesFromParent { get; set; } = new()
+    {
+        { "placeholder", "Placeholder from parent" },
+        { "maxlength", "5" },
+        { "required", "required" }
+    };
 }

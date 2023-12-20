@@ -10,7 +10,7 @@
         </div>
     }
 
-    @if(DangerChildContent != null)
+    @if (DangerChildContent != null)
     {
         <div class="alert alert-danger">
             @DangerChildContent
@@ -18,6 +18,8 @@
     }
 
     <button class="btn btn-danger" @onclick="OnButtonClick">Button To Be Clicked</button>
+
+    <_GrandChildComponent />
 </div>
 
 @code {
@@ -29,6 +31,9 @@
 
     [Parameter]
     public RenderFragment? DangerChildContent { get; set; }
+
+    [Parameter]
+    public string? MessageForGrandChild { get; set; }
 
     [Parameter]
     public EventCallback OnButtonClick { get; set; }
