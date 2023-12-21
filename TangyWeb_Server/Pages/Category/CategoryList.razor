@@ -1,0 +1,107 @@
+﻿@page "/categorylist"
+
+@inject ICategoryRepository categoryRepository
+@inject IJSRuntime jsRuntime
+
+<PageTitle>Categories</PageTitle>
+
+@* Child component *@
+<_DeleteConfirmationModal CallDelete="DeleteCategory" IsParentProcessing="IsLoading" />
+
+<div class="row mt-4">
+    <div class="col-6">
+        <h4 class="card-title text-primary">Category List</h4>
+    </div>
+    <div class="col-4 offset-2">
+        <a href="/category/create" class="form-control btn btn-primary">Add new category</a>
+    </div>
+
+    <div class="col-12 p-3">
+        @if (Categories.Any())
+        {
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Categories)
+                    {
+                        <tr>
+                            <td>@item.Name</td>
+                            <td>
+                                <NavLink href="@($"/category/edit/{item.Id}")" class="btn btn-primary">Edit</NavLink>
+                                <button @onclick="() => HandleDelete(item.Id)" class="btn btn-danger">Delete</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            if (IsLoading)
+            {
+                // Show the loading.gif
+                <div class="text-center">
+                    <img class="loading-gif" src="/images/rolling.gif" />
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info">No Records found...</div>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    private IEnumerable<CategoryDTO> Categories { get; set; } = new List<CategoryDTO>();
+    private bool IsLoading { get; set; } = true;
+    private int DeleteCategoryID { get; set; } = 0;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            LoadCategories();
+        }
+    }
+
+    private void LoadCategories()
+    {
+        // Sets all the categories to the Categories property.
+        Categories = categoryRepository.GetAll();
+
+        // Hide the loading.gif
+        IsLoading = false;
+        StateHasChanged();
+    }
+
+    private void HandleDelete(int id)
+    {
+        DeleteCategoryID = id;
+        jsRuntime.InvokeVoidAsync("ShowDeleteConfirmationModal");
+    }
+
+    // Invoked by the 'CallDelete' property in the childComponent.
+    private void DeleteCategory(bool isConfirmed)
+    {
+        IsLoading = true;
+        // isConfirmed should be true to delete.
+        if (isConfirmed && DeleteCategoryID != 0)
+        {
+            // Deletes the category.
+            categoryRepository.Delete(DeleteCategoryID);
+
+            // Load the categories to update the view.
+            LoadCategories();
+
+            // Invoke the method in the JS file (add the file path in layout.cshtml).
+            jsRuntime.InvokeVoidAsync("HideDeleteConfirmationModal");
+        }
+        IsLoading = false;
+    }
+}

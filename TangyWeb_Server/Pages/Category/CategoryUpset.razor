@@ -1,0 +1,84 @@
+﻿@page "/category/create"
+@page "/category/edit/{id:int}"
+
+@inject ICategoryRepository categoryRepository
+@inject NavigationManager navigationManager
+
+<div class="row my-2">
+    <h3 class="card-title text-primary mb-3 ml-3">@Title Category</h3>
+
+    <div class="col-12">
+        @if (IsLoading)
+        {
+            <div class="text-center">
+                <img class="loading-gif" src="/images/rolling.gif" />
+            </div>
+        }
+        else
+        {
+            <EditForm Model="Category" OnValidSubmit="UpsertCategory">
+                @* <ValidationSummary /> *@
+                <DataAnnotationsValidator />
+                <div class="form-group">
+                    <label>Name</label>
+                    <InputText class="form-control" @bind-Value="Category.Name"></InputText>
+                    <ValidationMessage For="() => Category.Name" />
+                </div>
+                <div class="form-group my-2">
+                    <button class="btn btn-primary">@Title</button>
+                    <NavLink href="categorylist" class="btn btn-warning">Back</NavLink>
+                </div>
+            </EditForm>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private CategoryDTO Category { get; set; } = new();
+    private string Title = "Create";
+    private bool IsLoading { get; set; } = true;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            if (Id == 0)
+            {
+                // Create new category.
+                IsLoading = false;
+                StateHasChanged();
+            }
+            else
+            {
+                // Get the category to update.
+                Title = "Update";
+
+                LoadCategories();
+            }
+        }
+    }
+
+    private void LoadCategories()
+    {
+        Category = categoryRepository.Get(Id);
+        IsLoading = false;
+        StateHasChanged();
+    }
+
+    private void UpsertCategory()
+    {
+        if (Category.Id == 0)
+        {
+            categoryRepository.Create(Category);
+            navigationManager.NavigateTo("categorylist");
+        }
+        else
+        {
+            categoryRepository.Update(Category);
+            navigationManager.NavigateTo("categorylist");
+        }
+    }
+}
