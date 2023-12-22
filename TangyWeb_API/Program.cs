@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using Tangy_Business.Repository;
+using Tangy_Business.Repository.IRepository;
 using Tangy_DataAccess.Data;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,6 +17,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlSer
 
 // Register AutoMapper for DI.
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
+builder.Services.AddScoped<IProductRepository, ProductRepository>();
+builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 
 var app = builder.Build();
 
