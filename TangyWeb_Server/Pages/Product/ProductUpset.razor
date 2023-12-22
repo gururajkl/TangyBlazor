@@ -1,0 +1,177 @@
+﻿@page "/product/create"
+@page "/product/edit/{id:int}"
+
+@inject IProductRepository productRepository
+@inject ICategoryRepository categoryRepository
+@inject NavigationManager navigationManager
+@inject IFileService fileService
+@inject IJSRuntime jsRuntime
+
+<div class="row my-2">
+    <h3 class="card-title text-primary mb-3 ml-3">@Title Product</h3>
+
+    <div class="col-md-10">
+        @if (IsLoading)
+        {
+            <div class="text-center">
+                <img class="loading-gif" src="/images/rolling.gif" />
+            </div>
+        }
+        else
+        {
+            <EditForm Model="Product" OnValidSubmit="UpsertProduct">
+                @* <ValidationSummary /> *@
+                <DataAnnotationsValidator />
+
+                <div class="form-group">
+                    <label>Name</label>
+                    <InputText class="form-control" @bind-Value="Product.Name"></InputText>
+                    <ValidationMessage For="() => Product.Name" />
+                </div>
+
+                <div class="form-group pt-2">
+                    <label>Description</label>
+                    <InputTextArea class="form-control" @bind-Value="Product.Description"></InputTextArea>
+                    <ValidationMessage For="() => Product.Description" />
+                </div>
+
+                <div class="row pt-3">
+                    <div class="form-group col-6">
+                        <div class="form-check">
+                            <InputCheckbox class="form-check-input" @bind-Value="Product.ShopFavorites"></InputCheckbox>
+                            <label class="form-check-label">Is Shop Favorite</label>
+                        </div>
+                    </div>
+
+                    <div class="form-group col-6">
+                        <div class="form-check">
+                            <InputCheckbox class="form-check-input" @bind-Value="Product.CustomerFavorites"></InputCheckbox>
+                            <label class="form-check-label">Is Customer Favorite</label>
+                        </div>
+                    </div>
+
+                    <div class="form-group col-6 pt-2">
+                        <label>Category</label>
+                        <InputSelect class="form-select" @bind-Value="Product.CategoryId">
+                            <option value="0" disabled selected>Select Category</option>
+                            @foreach (var item in Categories)
+                            {
+                                <option value="@item.Id">@item.Name</option>
+                            }
+                        </InputSelect>
+                        <ValidationMessage For="() => Product.CategoryId" />
+                    </div>
+
+                    <div class="form-group col-6" style="margin-top: 35px">
+                        <InputFile OnChange="HandleImageUpload"></InputFile>
+                    </div>
+                </div>
+
+                <div class="form-group pt-2">
+                    <label>Color</label>
+                    <InputText class="form-control" @bind-Value="Product.Color"></InputText>
+                    <ValidationMessage For="() => Product.Color" />
+                </div>
+
+                <div class="form-group my-2">
+                    <button class="btn btn-primary">@Title</button>
+                    <NavLink href="productlist" class="btn btn-warning">Back</NavLink>
+                </div>
+            </EditForm>
+        }
+    </div>
+
+    <div class="col-md-2">
+        <img src="@Product.ImageUrl" class="w-100" />
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private ProductDTO Product { get; set; } = new() { ImageUrl = "/images/default.png" };
+    private IEnumerable<CategoryDTO> Categories { get; set; } = new List<CategoryDTO>();
+    private string Title = "Create";
+    private bool IsLoading { get; set; } = true;
+    private string? OldImageURL { get; set; }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            LoadProducts();
+        }
+    }
+
+    private void LoadProducts()
+    {
+        IsLoading = true;
+        StateHasChanged();
+        Categories = categoryRepository.GetAll();
+
+        if (Id != 0)
+        {
+            // update
+            Title = "Update";
+            Product = productRepository.Get(Id);
+            OldImageURL = Product.ImageUrl;
+        }
+
+        IsLoading = false;
+        StateHasChanged();
+    }
+
+    private async void UpsertProduct()
+    {
+        if (Product.Id == 0)
+        {
+            productRepository.Create(Product);
+            await jsRuntime.ToastrSuccess("Product Created successfully");
+        }
+        else
+        {
+            if (OldImageURL != null && !OldImageURL.Contains("default.png"))
+            {
+                fileService.DeleteFile(OldImageURL);
+            }
+
+            productRepository.Update(Product);
+            await jsRuntime.ToastrSuccess("Product Updated successfully");
+        }
+        navigationManager.NavigateTo("productlist");
+    }
+
+    private async Task HandleImageUpload(InputFileChangeEventArgs e)
+    {
+        IsLoading = true;
+
+        try
+        {
+            if (e.GetMultipleFiles().Count > 0)
+            {
+                foreach (var file in e.GetMultipleFiles())
+                {
+                    FileInfo fileInfo = new(file.Name);
+
+                    if (fileInfo.Extension.ToLower() == ".jpg" ||
+                       fileInfo.Extension.ToLower() == ".png" ||
+                       fileInfo.Extension.ToLower() == ".jpeg")
+                    {
+                        Product.ImageUrl = await fileService.FileUpload(file);
+                    }
+                }
+            }
+            else
+            {
+                await jsRuntime.ToastrSuccess("Please select .jpg/.jpeg/.png file only");
+            }
+        }
+        catch (Exception ex)
+        {
+            await jsRuntime.ToastrError(ex.Message);
+        }
+
+        IsLoading = false;
+    }
+}

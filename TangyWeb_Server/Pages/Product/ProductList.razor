@@ -1,0 +1,128 @@
+﻿@page "/productlist"
+
+@inject IProductRepository productRepository
+@inject IJSRuntime jsRuntime
+@inject IFileService fileService
+
+<PageTitle>Products</PageTitle>
+
+@* Child component *@
+<_DeleteConfirmationModal CallDelete="DeleteProduct" IsParentProcessing="IsLoading" />
+
+<div class="row mt-4">
+    <div class="col-6">
+        <h4 class="card-title text-primary">Product List</h4>
+    </div>
+    <div class="col-4 offset-2">
+        <a href="/product/create" class="form-control btn btn-primary">Add new product</a>
+    </div>
+
+    <div class="col-12 p-3">
+        @if (Products.Any())
+        {
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Description</th>
+                        <th>ShopFavorites</th>
+                        <th>CustomerFavorites</th>
+                        <th>Category</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Products)
+                    {
+                        <tr>
+                            <td>@item.Name</td>
+                            <td>@item.Description</td>
+                            <td>
+                                <input type="checkbox" disabled checked="@item.ShopFavorites" />
+                            </td>
+                            <td>
+                                <input type="checkbox" disabled checked="@item.CustomerFavorites" />
+                            </td>
+                            <td>@item.Category!.Name</td>
+                            <td>
+                                <NavLink href="@($"/product/edit/{item.Id}")" class="btn btn-primary">Edit</NavLink>
+                                <button @onclick="() => HandleDelete(item.Id)" class="btn btn-danger">Delete</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            if (IsLoading)
+            {
+                // Show the loading.gif
+                <div class="text-center">
+                    <img class="loading-gif" src="/images/rolling.gif" />
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info">No Records found...</div>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    private IEnumerable<ProductDTO> Products { get; set; } = new List<ProductDTO>();
+    private bool IsLoading { get; set; } = true;
+    private int DeleteProductID { get; set; } = 0;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            LoadProducts();
+        }
+    }
+
+    private void LoadProducts()
+    {
+        // Sets all the categories to the Products property.
+        Products = productRepository.GetAll();
+
+        // Hide the loading.gif
+        IsLoading = false;
+        StateHasChanged();
+    }
+
+    private void HandleDelete(int id)
+    {
+        DeleteProductID = id;
+        jsRuntime.InvokeVoidAsync("ShowDeleteConfirmationModal");
+    }
+
+    // Invoked by the 'CallDelete' property in the childComponent.
+    private async void DeleteProduct(bool isConfirmed)
+    {
+        IsLoading = true;
+        // isConfirmed should be true to delete.
+        if (isConfirmed && DeleteProductID != 0)
+        {
+            ProductDTO productFromDB = productRepository.Get(DeleteProductID);
+
+            if (!productFromDB.ImageUrl!.Contains("default.png"))
+            {
+                fileService.DeleteFile(productFromDB.ImageUrl);
+            }
+
+            // Deletes the product.
+            productRepository.Delete(DeleteProductID);
+
+            // Load the categories to update the view.
+            LoadProducts();
+
+            // Invoke the method in the JS file (add the file path in layout.cshtml).
+            await jsRuntime.InvokeVoidAsync("HideDeleteConfirmationModal");
+            await jsRuntime.ToastrSuccess("Product Deleted successfully");
+        }
+        IsLoading = false;
+    }
+}
